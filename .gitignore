@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/
+coverage/
+.env
+.env.local
+*.db
+*.db-journal
+*.db-wal
+.DS_Store
+Thumbs.db
+*.log
+tmp/
+.cache/
