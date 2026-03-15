@@ -7,6 +7,7 @@ A standalone reference manager with group collaboration and Google Drive as the 
 CloudBib is a Zotero-like reference manager whose key differentiator is group collaboration with Google Drive providing the PDF storage layer — no vendor storage quotas. Group members can add PDFs, annotate them, and sync metadata, all backed by Google Drive.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the full design document.
+See [STATUS.md](STATUS.md) for a German status analysis and roadmap.
 
 ## Features (MVP)
 
