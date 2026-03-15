@@ -1,30 +1,22 @@
-import { auth, signOut } from "@/auth";
-import { redirect } from "next/navigation";
+import { signIn } from "@/auth";
 
-export default async function DashboardPage() {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/signin");
-  }
-
+export default function SignInPage() {
   return (
     <main style={styles.page}>
       <div style={styles.card}>
-        <h1 style={styles.title}>Dashboard</h1>
+        <h1 style={styles.title}>Anmelden</h1>
         <p style={styles.text}>
-          Angemeldet als {session.user.name ?? session.user.email}
+          Melde dich mit deinem Google-Konto an, um CloudBib zu verwenden.
         </p>
-        <p style={styles.textSmall}>User-ID: {session.user.id}</p>
 
         <form
           action={async () => {
             "use server";
-            await signOut({ redirectTo: "/" });
+            await signIn("google", { redirectTo: "/dashboard" });
           }}
         >
           <button type="submit" style={styles.button}>
-            Abmelden
+            Mit Google anmelden
           </button>
         </form>
       </div>
@@ -37,12 +29,12 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: "100vh",
     display: "grid",
     placeItems: "center",
-    background: "#020617",
+    background: "#0f172a",
     padding: "24px",
   },
   card: {
     width: "100%",
-    maxWidth: "680px",
+    maxWidth: "480px",
     background: "#111827",
     color: "#f9fafb",
     borderRadius: "18px",
@@ -54,22 +46,17 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "32px",
   },
   text: {
-    marginTop: "14px",
-    marginBottom: "8px",
-    color: "#e5e7eb",
+    marginTop: "12px",
+    marginBottom: "24px",
+    color: "#cbd5e1",
     lineHeight: 1.6,
   },
-  textSmall: {
-    marginTop: "0",
-    marginBottom: "24px",
-    color: "#94a3b8",
-    fontSize: "14px",
-  },
   button: {
+    width: "100%",
     border: 0,
     borderRadius: "12px",
-    padding: "12px 16px",
-    background: "#dc2626",
+    padding: "14px 16px",
+    background: "#2563eb",
     color: "#fff",
     fontWeight: 700,
     cursor: "pointer",

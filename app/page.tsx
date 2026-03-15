@@ -1,18 +1,32 @@
-export default function HomePage() {
+import { auth } from "@/auth";
+import Link from "next/link";
+
+export default async function HomePage() {
+  const session = await auth();
+
   return (
     <main style={styles.page}>
       <div style={styles.card}>
         <span style={styles.badge}>CloudBib v1</span>
         <h1 style={styles.title}>CloudBib läuft</h1>
         <p style={styles.text}>
-          Die Basis-App ist gestartet. Als Nächstes folgen Authentifizierung,
-          Bibliotheken, Items und PDF-Uploads.
+          Basis-App, Datenbank und Auth sind vorbereitet.
         </p>
 
         <div style={styles.actions}>
-          <a href="/api/health" style={styles.link}>
-            API Healthcheck öffnen
-          </a>
+          {session?.user ? (
+            <Link href="/dashboard" style={styles.link}>
+              Zum Dashboard
+            </Link>
+          ) : (
+            <Link href="/signin" style={styles.link}>
+              Anmelden
+            </Link>
+          )}
+
+          <Link href="/api/health" style={styles.linkSecondary}>
+            API Healthcheck
+          </Link>
         </div>
       </div>
     </main>
@@ -70,6 +84,14 @@ const styles: Record<string, React.CSSProperties> = {
     textDecoration: "none",
     color: "#ffffff",
     background: "#1d4ed8",
+    padding: "12px 16px",
+    borderRadius: "12px",
+    fontWeight: 600,
+  },
+  linkSecondary: {
+    textDecoration: "none",
+    color: "#ffffff",
+    background: "#334155",
     padding: "12px 16px",
     borderRadius: "12px",
     fontWeight: 600,
