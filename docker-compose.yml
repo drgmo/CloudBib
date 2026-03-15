@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16
+    container_name: cloudbib-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cloudbib
+      POSTGRES_PASSWORD: cloudbib_dev_password
+      POSTGRES_DB: cloudbib
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cloudbib -d cloudbib"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cloudbib-web
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://cloudbib:cloudbib_dev_password@db:5432/cloudbib?schema=public
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: change-me-in-production
+      APP_STORAGE_ROOT: /app/storage
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./storage:/app/storage
+
+volumes:
+  postgres_data:

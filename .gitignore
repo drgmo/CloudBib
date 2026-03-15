@@ -1,16 +1,24 @@
-node_modules/
-dist/
-build/
-release/
-coverage/
+# dependencies
+node_modules
+
+# next.js
+.next
+out
+
+# environment
 .env
 .env.local
-*.db
-*.db-journal
-*.db-wal
+
+# misc
+coverage
+dist
+*.log
 .DS_Store
 Thumbs.db
-*.log
-tmp/
-.cache/
-package-lock.json
+
+# storage uploads (keep directory structure)
+storage/uploads/*
+!storage/uploads/.gitkeep
+
+# docker
+postgres_data

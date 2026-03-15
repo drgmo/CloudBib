@@ -1,0 +1,240 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────────────
+
+enum GroupRole {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum LibraryVisibility {
+  PRIVATE
+  GROUP
+}
+
+enum AttachmentKind {
+  PDF
+  SUPPLEMENT
+  IMAGE
+  OTHER
+}
+
+enum ActivityType {
+  USER_SIGNED_UP
+  LIBRARY_CREATED
+  ITEM_CREATED
+  ITEM_UPDATED
+  ATTACHMENT_UPLOADED
+  ATTACHMENT_DELETED
+  ANNOTATION_CREATED
+  ANNOTATION_UPDATED
+  ANNOTATION_DELETED
+}
+
+// ─── Auth.js models ─────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts       Account[]
+  sessions       Session[]
+  memberships    Membership[]
+  ownedGroups    Group[]         @relation("GroupOwner")
+  ownedLibraries Library[]       @relation("LibraryOwner")
+  annotations    Annotation[]
+  activityEvents ActivityEvent[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─── Domain models ──────────────────────────────────────────────────────────
+
+model Group {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  ownerId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner       User         @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  memberships Membership[]
+  libraries   Library[]
+
+  @@map("groups")
+}
+
+model Membership {
+  id        String    @id @default(cuid())
+  userId    String
+  groupId   String
+  role      GroupRole @default(VIEWER)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
+  @@map("memberships")
+}
+
+model Library {
+  id          String            @id @default(cuid())
+  name        String
+  description String?
+  visibility  LibraryVisibility @default(PRIVATE)
+  ownerId     String?
+  groupId     String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  owner          User?           @relation("LibraryOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  group          Group?          @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  items          Item[]
+  activityEvents ActivityEvent[]
+
+  @@index([ownerId])
+  @@index([groupId])
+  @@map("libraries")
+}
+
+model Item {
+  id          String   @id @default(cuid())
+  libraryId   String
+  title       String
+  authors     String[]
+  year        Int?
+  journal     String?
+  doi         String?
+  abstract    String?
+  citationKey String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  library        Library         @relation(fields: [libraryId], references: [id], onDelete: Cascade)
+  attachments    Attachment[]
+  activityEvents ActivityEvent[]
+
+  @@index([libraryId])
+  @@index([doi])
+  @@map("items")
+}
+
+model Attachment {
+  id             String         @id @default(cuid())
+  itemId         String
+  kind           AttachmentKind @default(PDF)
+  originalName   String
+  storedName     String
+  mimeType       String
+  relativePath   String
+  sizeBytes      BigInt
+  checksumSha256 String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  item           Item            @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  annotations    Annotation[]
+  activityEvents ActivityEvent[]
+
+  @@index([itemId])
+  @@index([checksumSha256])
+  @@map("attachments")
+}
+
+model Annotation {
+  id           String   @id @default(cuid())
+  attachmentId String
+  userId       String
+  page         Int
+  type         String
+  payload      Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  attachment Attachment @relation(fields: [attachmentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([attachmentId])
+  @@index([userId])
+  @@map("annotations")
+}
+
+model ActivityEvent {
+  id           String       @id @default(cuid())
+  type         ActivityType
+  userId       String?
+  libraryId    String?
+  itemId       String?
+  attachmentId String?
+  payload      Json?
+  createdAt    DateTime     @default(now())
+
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  library    Library?    @relation(fields: [libraryId], references: [id], onDelete: SetNull)
+  item       Item?       @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  attachment Attachment? @relation(fields: [attachmentId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([libraryId])
+  @@index([itemId])
+  @@index([attachmentId])
+  @@map("activity_events")
+}
