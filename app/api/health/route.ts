@@ -1,5 +1,28 @@
 import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
-  return NextResponse.json({ status: "ok", timestamp: new Date().toISOString() });
+  try {
+    await db.$queryRaw`SELECT 1`;
+
+    return NextResponse.json({
+      ok: true,
+      service: "cloudbib-web",
+      database: "up",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        ok: false,
+        service: "cloudbib-web",
+        database: "down",
+        timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
 }
